@@ -3,9 +3,9 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile
-from utils import download_video, get_video_url
 
 from config import RAPIDAPI_HOST, RAPIDAPI_KEY
+from utils import download_video, get_video_url
 
 
 class DownloadVideo(StatesGroup):
@@ -13,13 +13,13 @@ class DownloadVideo(StatesGroup):
 
 
 async def send_welcome(message: types.Message, state: FSMContext):
-    await message.reply("Привет! Отправь мне ссылку на Instagram Reel или TikTok видео, и я верну тебе видео.")
+    await message.reply("Hi. Send me a link to an Instagram Reel or TikTok video and I'll get the video back to you.")
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
 async def process_link(message: types.Message, state: FSMContext):
     url = message.text
-    await message.reply("Обрабатываю вашу ссылку...")
+    await message.reply("Processing your link...")
 
     api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
     querystring = {"url": url}
@@ -36,9 +36,9 @@ async def process_link(message: types.Message, state: FSMContext):
             video_file = BufferedInputFile(video_content, filename="video.mp4")
             await message.reply_video(video_file)
         else:
-            await message.reply("Не удалось скачать видео.")
+            await message.reply("Failed to download the video.")
     else:
-        await message.reply("Не удалось найти ссылку на видео.")
+        await message.reply("Couldn't find a link to the video.")
 
     await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)
