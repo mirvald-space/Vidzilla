@@ -1,5 +1,3 @@
-from aiogram.types import URLInputFile
-from aiogram import Bot
 import aiohttp
 from aiogram import Bot, types
 from aiogram.filters.command import Command
@@ -17,13 +15,13 @@ class DownloadVideo(StatesGroup):
 
 
 async def send_welcome(message: types.Message, state: FSMContext):
-    await message.answer("Привет. Отправь мне ссылку на видео из Instagram Reels или TikTok, и я верну тебе это видео в виде видеосообщения и файла-документа.")
+    await message.answer("Hi. Send me a link to a video from Instagram Reels or TikTok, and I'll get that video back to you as a video message and document file.")
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
 async def process_link(message: types.Message, state: FSMContext, bot: Bot):
     url = message.text
-    await message.answer("Обрабатываю вашу ссылку...")
+    await message.answer("Processing your link...")
 
     api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
     querystring = {"url": url}
@@ -55,14 +53,13 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
             await bot.send_document(
                 chat_id=message.chat.id,
                 document=doc_file,
-                caption="Your video file",
                 disable_content_type_detection=True
             )
 
         except Exception as e:
-            await message.answer(f"Не удалось отправить видео: {str(e)}")
+            await message.answer(f"Failed to send the video: {str(e)}")
     else:
-        await message.answer("Не удалось найти ссылку на видео.")
+        await message.answer("Couldn't find a link to the video.")
 
     await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)
