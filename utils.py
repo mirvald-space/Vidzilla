@@ -21,9 +21,16 @@ async def get_video_url(api_url, headers, querystring):
     return None
 
 
-async def download_video(url):
+async def download_video(url: str, file_path: str) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
-                return await response.read()
-    return None
+                with open(file_path, 'wb') as f:
+                    while True:
+                        chunk = await response.content.read(1024)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+            else:
+                raise Exception(f"Failed to download video: HTTP {
+                                response.status}")
