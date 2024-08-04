@@ -16,15 +16,21 @@ This Telegram bot allows users to download videos from Instagram Reels and TikTo
 ## Installation and Setup
 
 1. Clone this repository:
-   git clone https://github.com/yourusername/video-downloader-bot.git
-   cd video-downloader-bot
+
+- git clone https://github.com/yourusername/video-downloader-bot.git
+- cd video-downloader-bot
+
 2. Install the required dependencies:
-   pip install -r requirements.txt
+
+- pip install -r requirements.txt
+
 3. Create a `.env` file in the project root and add the following environment variables:
-   BOT_TOKEN=your_telegram_bot_token
-   RAPIDAPI_KEY=your_rapidapi_key
-   WEBHOOK_PATH=/path/to/webhook
-   WEBHOOK_URL=https://your-domain.com
+
+- `BOT_TOKEN`: Your Telegram bot token obtained from BotFather
+- `RAPIDAPI_KEY`: Your RapidAPI key for the Social Media Video Downloader API
+- `WEBHOOK_PATH`: The path for your webhook (e.g., `/webhook`)
+- `WEBHOOK_URL`: The full URL to your webhook (e.g., `https://your-domain.com/webhook`)
+
 4. Set up a webhook for your bot on a server with HTTPS support.
 
 5. Run the bot:
