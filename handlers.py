@@ -1,14 +1,13 @@
 import re
 
-import aiohttp
 from aiogram import Bot, types
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.methods import SendDocument
-from aiogram.types import BufferedInputFile, FSInputFile, URLInputFile
 
 from config import RAPIDAPI_HOST, RAPIDAPI_KEY
+from instagram_handler import process_instagram
+from tiktok_handler import process_tiktok
 from utils import get_video_url
 
 
@@ -44,7 +43,6 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
     url = message.text
     await message.answer("Processing your link...")
 
-    # Remove the part of the URL after the question mark for Instagram links
     if 'instagram.com' in url:
         url = re.sub(r'\?.*$', '', url)
 
@@ -55,32 +53,21 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
         "x-rapidapi-host": RAPIDAPI_HOST
     }
 
-    video_url = await get_video_url(api_url, headers, querystring)
+    try:
+        video_url = await get_video_url(api_url, headers, querystring)
+    except Exception as e:
+        await message.answer(f"Error getting video URL: {str(e)}")
+        await state.clear()
+        await state.set_state(DownloadVideo.waiting_for_link)
+        return
 
     if video_url:
-        try:
-            # Создаем URLInputFile для видео
-            video_file = URLInputFile(video_url)
-
-            # Отправляем как видео
-            await message.answer_video(
-                video_file,
-                width=720,
-                height=1280,
-                duration=60,  # Предполагаемая продолжительность, замените на реальную если возможно
-                supports_streaming=True
-            )
-
-            # Отправляем как обычный файл
-            file_name = f"video_{message.from_user.id}.mp4"
-            doc_file = URLInputFile(video_url, filename=file_name)
-            await bot.send_document(
-                chat_id=message.chat.id,
-                document=doc_file,
-                disable_content_type_detection=True
-            )
-        except Exception as e:
-            await message.answer(f"Failed to send the video: {str(e)}")
+        if 'instagram.com' in url:
+            await process_instagram(message, bot, url)
+        elif 'tiktok.com' in url:
+            await process_tiktok(message, bot, video_url)
+        else:
+            await message.answer("Unsupported platform.")
     else:
         await message.answer("Couldn't find a link to the video.")
 
