@@ -6,12 +6,8 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from config import BOT_TOKEN, WEBHOOK_PATH, WEBHOOK_URL
-from handlers import (
-    # Убедитесь, что этот файл существует и содержит функцию register_handlers
-    register_handlers,
-)
+from handlers import register_handlers
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
 
@@ -43,8 +39,7 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    # Регистрация обработчика сообщений
-    register_handlers(dp)  # Вызов функции register_handlers
+    register_handlers(dp)
 
     app = web.Application()
     app['bot'] = bot
