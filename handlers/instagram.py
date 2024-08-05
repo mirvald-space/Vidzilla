@@ -1,50 +1,58 @@
-import asyncio
-import os
+from aiogram.types import URLInputFile
+from aiohttp import ClientSession
 
-import yt_dlp
-from aiogram.types import FSInputFile
+from config import RAPIDAPI_HOST, RAPIDAPI_KEY
 
 
-async def download_instagram_video(url, output_path):
-    loop = asyncio.get_event_loop()
+async def process_instagram(message, bot, instagram_url):
     try:
-        ydl_opts = {
-            'outtmpl': output_path,
-            'format': 'best',
+        api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
+        headers = {
+            "X-RapidAPI-Key": RAPIDAPI_KEY,
+            "X-RapidAPI-Host": RAPIDAPI_HOST
         }
-        await loop.run_in_executor(None, lambda: yt_dlp.YoutubeDL(ydl_opts).download([url]))
-        return True
-    except Exception as e:
-        print(f"Error downloading Instagram video: {str(e)}")
-        return False
+        querystring = {"url": instagram_url}
 
+        async with ClientSession() as session:
+            async with session.get(api_url, headers=headers, params=querystring) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    video_url = await get_video_url(data)
+                else:
+                    await message.answer(f"Ошибка API: HTTP {response.status}")
+                    return
 
-async def process_instagram(message, bot, url):
-    file_name = f"instagram_video_{message.from_user.id}.mp4"
-    download_success = await download_instagram_video(url, file_name)
-
-    if download_success:
-        try:
+        if video_url:
             # Отправляем видео
+            video_file = URLInputFile(video_url)
             await message.answer_video(
-                FSInputFile(file_name),
+                video_file,
                 caption="Here's your Instagram video!"
             )
 
             # Отправляем как документ
+            file_name = f"instagram_video_{message.from_user.id}.mp4"
+            doc_file = URLInputFile(video_url, filename=file_name)
             await bot.send_document(
                 chat_id=message.chat.id,
-                document=FSInputFile(file_name),
+                document=doc_file,
                 caption="Here's your Instagram video as a file!",
                 disable_content_type_detection=True
             )
-        except Exception as e:
-            await message.answer(f"Error sending Instagram video: {str(e)}")
-        finally:
-            # Удаляем временный файл
-            try:
-                os.remove(file_name)
-            except Exception as e:
-                print(f"Error removing temporary file: {str(e)}")
-    else:
-        await message.answer("Failed to download Instagram video.")
+        else:
+            await message.answer("Не удалось получить URL видео.")
+    except Exception as e:
+        await message.answer(f"Ошибка при обработке видео из Instagram: {str(e)}")
+
+
+async def get_video_url(data):
+    if data['success']:
+        if 'links' in data:
+            if isinstance(data['links'], list):
+                video_url = next((link['link'] for link in data['links'] if link['quality']
+                                 == 'video_hd_original' or link['quality'] == 'video_hd_original_0'), None)
+                if not video_url:
+                    video_url = next(
+                        (link['link'] for link in data['links'] if 'video' in link['quality'].lower()), None)
+                return video_url
+    return None
