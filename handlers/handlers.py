@@ -5,10 +5,8 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from config import RAPIDAPI_HOST, RAPIDAPI_KEY
 from handlers.instagram import process_instagram
 from handlers.tiktok import process_tiktok
-from utils import get_video_url
 
 
 class DownloadVideo(StatesGroup):
@@ -43,33 +41,15 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
     url = message.text
     await message.answer("Processing your link...")
 
-    if 'instagram.com' in url:
-        url = re.sub(r'\?.*$', '', url)
-
-    api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
-    querystring = {"url": url}
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": RAPIDAPI_HOST
-    }
-
     try:
-        video_url = await get_video_url(api_url, headers, querystring)
-    except Exception as e:
-        await message.answer(f"Error getting video URL: {str(e)}")
-        await state.clear()
-        await state.set_state(DownloadVideo.waiting_for_link)
-        return
-
-    if video_url:
         if 'instagram.com' in url:
             await process_instagram(message, bot, url)
         elif 'tiktok.com' in url:
-            await process_tiktok(message, bot, video_url)
+            await process_tiktok(message, bot, url)
         else:
             await message.answer("Unsupported platform.")
-    else:
-        await message.answer("Couldn't find a link to the video.")
+    except Exception as e:
+        await message.answer(f"Error processing video: {str(e)}")
 
     await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)

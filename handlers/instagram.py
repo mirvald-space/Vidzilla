@@ -2,6 +2,7 @@ from aiogram.types import URLInputFile
 from aiohttp import ClientSession
 
 from config import RAPIDAPI_HOST, RAPIDAPI_KEY
+from utils.utils import get_video_url
 
 
 async def process_instagram(message, bot, instagram_url):
@@ -19,18 +20,16 @@ async def process_instagram(message, bot, instagram_url):
                     data = await response.json()
                     video_url = await get_video_url(data)
                 else:
-                    await message.answer(f"Ошибка API: HTTP {response.status}")
+                    await message.answer(f"API Error: HTTP {response.status}")
                     return
 
         if video_url:
-            # Отправляем видео
             video_file = URLInputFile(video_url)
             await message.answer_video(
                 video_file,
                 caption="Here's your Instagram video!"
             )
 
-            # Отправляем как документ
             file_name = f"instagram_video_{message.from_user.id}.mp4"
             doc_file = URLInputFile(video_url, filename=file_name)
             await bot.send_document(
@@ -43,16 +42,3 @@ async def process_instagram(message, bot, instagram_url):
             await message.answer("Не удалось получить URL видео.")
     except Exception as e:
         await message.answer(f"Ошибка при обработке видео из Instagram: {str(e)}")
-
-
-async def get_video_url(data):
-    if data['success']:
-        if 'links' in data:
-            if isinstance(data['links'], list):
-                video_url = next((link['link'] for link in data['links'] if link['quality']
-                                 == 'video_hd_original' or link['quality'] == 'video_hd_original_0'), None)
-                if not video_url:
-                    video_url = next(
-                        (link['link'] for link in data['links'] if 'video' in link['quality'].lower()), None)
-                return video_url
-    return None
