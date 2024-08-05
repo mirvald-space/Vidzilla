@@ -39,6 +39,6 @@ async def process_instagram(message, bot, instagram_url):
                 disable_content_type_detection=True
             )
         else:
-            await message.answer("Не удалось получить URL видео.")
+            await message.answer("Failed to retrieve the URL of the video.")
     except Exception as e:
         await message.answer(f"Ошибка при обработке видео из Instagram: {str(e)}")
