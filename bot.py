@@ -22,14 +22,16 @@ async def handle_webhook_get(request):
 async def on_startup(app):
     bot = app['bot']
     webhook_url = WEBHOOK_URL + WEBHOOK_PATH
+    logging.info(f"Setting webhook to {webhook_url}")
     await bot.set_webhook(webhook_url)
-    logging.info(f"Bot started and webhook set to {webhook_url}")
+    logging.info("Webhook set successfully")
 
 
 async def on_shutdown(app):
     bot = app['bot']
+    logging.info("Closing bot session")
     await bot.session.close()
-    logging.info("Bot stopped")
+    logging.info("Bot session closed")
 
 
 async def handle_message(message: types.Message):
@@ -39,9 +41,14 @@ async def handle_message(message: types.Message):
         logging.error(f"Error in handle_message: {e}")
 
 
-async def main():
+async def create_app():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
+
+    logging.info("Deleting webhook")
+    await bot.delete_webhook(drop_pending_updates=True)
+    logging.info("Webhook deleted")
+
     register_handlers(dp)
 
     app = web.Application()
@@ -54,10 +61,7 @@ async def main():
     webhook_handler.register(app, path=WEBHOOK_PATH)
     setup_application(app, dp, bot=bot)
 
-    # Добавляем корневой роутер
     app.router.add_route('*', '/', handle_root)
-
-    # Добавляем GET-обработчик для /webhook
     app.router.add_get(WEBHOOK_PATH, handle_webhook_get)
 
     app.on_startup.append(on_startup)
@@ -65,6 +69,29 @@ async def main():
 
     return app
 
+
+async def main():
+    app = await create_app()
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8000)
+
+    logging.info("Starting web application")
+    await site.start()
+
+    try:
+        # Run forever
+        await asyncio.Event().wait()
+    except KeyboardInterrupt:
+        logging.info("KeyboardInterrupt received. Shutting down...")
+    finally:
+        logging.info("Cleaning up...")
+        await runner.cleanup()
+        logging.info("Cleanup complete. Exiting.")
+
 if __name__ == '__main__':
-    app = asyncio.run(main())
-    web.run_app(app, host='0.0.0.0', port=8000)
+    logging.info("Starting bot")
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Bot stopped")
