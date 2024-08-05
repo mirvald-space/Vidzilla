@@ -6,8 +6,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from config import RAPIDAPI_HOST, RAPIDAPI_KEY
-from instagram_handler import process_instagram
-from tiktok_handler import process_tiktok
+from handlers.instagram import process_instagram
+from handlers.tiktok import process_tiktok
 from utils import get_video_url
 
 
