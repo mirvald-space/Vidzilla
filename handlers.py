@@ -56,10 +56,12 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
     }
 
     video_url = await get_video_url(api_url, headers, querystring)
+
     if video_url:
         try:
             # Создаем URLInputFile для видео
             video_file = URLInputFile(video_url)
+
             # Отправляем как видео
             await message.answer_video(
                 video_file,
@@ -68,6 +70,7 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
                 duration=60,  # Предполагаемая продолжительность, замените на реальную если возможно
                 supports_streaming=True
             )
+
             # Отправляем как обычный файл
             file_name = f"video_{message.from_user.id}.mp4"
             doc_file = URLInputFile(video_url, filename=file_name)
@@ -80,6 +83,7 @@ async def process_link(message: types.Message, state: FSMContext, bot: Bot):
             await message.answer(f"Failed to send the video: {str(e)}")
     else:
         await message.answer("Couldn't find a link to the video.")
+
     await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)
 
