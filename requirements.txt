@@ -3,4 +3,3 @@ aiohttp
 python-dotenv
 asyncio
 asyncio
-yt_dlp
