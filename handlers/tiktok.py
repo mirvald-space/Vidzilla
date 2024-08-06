@@ -1,32 +1,49 @@
-from aiogram.types import URLInputFile
-from aiohttp import ClientSession
+import http.client
+import json
+from urllib.parse import urlencode
 
-from config import RAPIDAPI_HOST, RAPIDAPI_KEY
-from utils.utils import get_video_url
+from aiogram.types import URLInputFile
+
+from config import RAPIDAPI_KEY
 
 
 async def process_tiktok(message, bot, tiktok_url):
     try:
-        api_url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/all"
-        headers = {
-            "X-RapidAPI-Key": RAPIDAPI_KEY,
-            "X-RapidAPI-Host": RAPIDAPI_HOST
-        }
-        querystring = {"url": tiktok_url}
+        conn = http.client.HTTPSConnection(
+            "social-media-video-downloader.p.rapidapi.com")
 
-        async with ClientSession() as session:
-            async with session.get(api_url, headers=headers, params=querystring) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    video_url = await get_video_url(data)
-                else:
-                    await message.answer(f"API Error: HTTP {response.status}")
-                    return
+        headers = {
+            'X-RapidAPI-Key': RAPIDAPI_KEY,
+            'X-RapidAPI-Host': "social-media-video-downloader.p.rapidapi.com"
+        }
+
+        querystring = urlencode({"url": tiktok_url})
+
+        conn.request("GET", f"/smvd/get/all?{querystring}", headers=headers)
+
+        response = conn.getresponse()
+
+        if response.status == 200:
+            data = json.loads(response.read().decode())
+
+            # Выводим полный ответ API для отладки
+            print(f"Full API response: {json.dumps(data, indent=2)}")
+
+            if 'links' in data and len(data['links']) > 0:
+                video_url = data['links'][0]['link']
+            else:
+                await bot.send_message(message.chat.id, f"Failed to retrieve the URL of the video. API response: {json.dumps(data, indent=2)}")
+                return
+        else:
+            error_message = response.read().decode()
+            await bot.send_message(message.chat.id, f"API Error: HTTP {response.status}\nDetails: {error_message}")
+            return
 
         if video_url:
             video_file = URLInputFile(video_url)
-            await message.answer_video(
-                video_file,
+            await bot.send_video(
+                chat_id=message.chat.id,
+                video=video_file,
                 caption="Here's your TikTok video!"
             )
 
@@ -39,6 +56,9 @@ async def process_tiktok(message, bot, tiktok_url):
                 disable_content_type_detection=True
             )
         else:
-            await message.answer("Failed to retrieve the URL of the video.")
+            await bot.send_message(message.chat.id, "Failed to retrieve the URL of the video.")
+
     except Exception as e:
-        await message.answer(f"Error processing TikTok video: {str(e)}")
+        await bot.send_message(message.chat.id, f"Error processing TikTok video: {str(e)}")
+    finally:
+        conn.close()
