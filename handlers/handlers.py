@@ -4,9 +4,11 @@ from aiogram import Bot, types
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import Message
 
 from handlers.instagram import process_instagram
 from handlers.tiktok import process_tiktok
+from handlers.youtube import process_youtube
 
 
 class DownloadVideo(StatesGroup):
@@ -37,17 +39,18 @@ async def send_help(message: types.Message):
                          "/help - show this help message")
 
 
-async def process_link(message: types.Message, state: FSMContext, bot: Bot):
+async def process_link(message: Message, state: FSMContext, bot: Bot):
     url = message.text
     await message.answer("Processing your link...")
-
     try:
         if 'instagram.com' in url:
             await process_instagram(message, bot, url)
         elif 'tiktok.com' in url:
             await process_tiktok(message, bot, url)
+        elif 'youtube.com' in url or 'youtu.be' in url:
+            await process_youtube(message, bot, url)
         else:
-            await message.answer("Unsupported platform.")
+            await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, or YouTube.")
     except Exception as e:
         await message.answer(f"Error processing video: {str(e)}")
 
