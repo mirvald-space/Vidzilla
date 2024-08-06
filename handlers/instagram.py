@@ -1,102 +1,55 @@
-import asyncio
-import logging
-import os
+import json
 
-import yt_dlp
-from aiogram import Bot
-from aiogram.types import FSInputFile
+import aiohttp
+from aiogram.types import URLInputFile
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# Путь к папке, где будут временно храниться загруженные файлы
-DOWNLOAD_DIR = os.path.join(os.path.dirname(__file__), "temp_downloads")
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+from config import RAPIDAPI_KEY
 
 
-async def download_instagram_content(url):
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': {
-            'default': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s'),
-        },
-        'ignore_no_formats': True,
-        'verbose': True,
-    }
-
+async def process_instagram(message, bot, instagram_url):
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = await asyncio.to_thread(ydl.extract_info, url, download=True)
-            if info is None:
-                logger.warning("No information extracted from the URL")
-                return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://instagram-media-downloader.p.rapidapi.com/rapid/post_v2.php",
+                                   params={"url": instagram_url},
+                                   headers={
+                                       "X-RapidAPI-Key": RAPIDAPI_KEY,
+                                       "X-RapidAPI-Host": "instagram-media-downloader.p.rapidapi.com"
+                                   }) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    print(f"Full API response: {json.dumps(data, indent=2)}")
 
-            filename = ydl.prepare_filename(info)
+                    if 'items' in data and len(data['items']) > 0:
+                        item = data['items'][0]
+                        if 'video_versions' in item and len(item['video_versions']) > 0:
+                            video_url = item['video_versions'][0]['url']
+                            caption = item['caption']['text'] if 'caption' in item and item['caption'] else ""
 
-            if os.path.exists(filename):
-                logger.info(f"Video downloaded successfully: {filename}")
-                return filename
-            else:
-                logger.warning(
-                    f"Video file not found after download: {filename}")
-                return None
+                            # Отправка видео
+                            video_file = URLInputFile(video_url)
+                            await bot.send_video(
+                                chat_id=message.chat.id,
+                                video=video_file,
+                                caption=caption
+                            )
 
+                            # Отправка видео как документа
+                            file_name = f"instagram_video_{
+                                message.from_user.id}.mp4"
+                            doc_file = URLInputFile(
+                                video_url, filename=file_name)
+                            await bot.send_document(
+                                chat_id=message.chat.id,
+                                document=doc_file,
+                                caption="Вот ваше Instagram видео в виде файла",
+                                disable_content_type_detection=True
+                            )
+                        else:
+                            await bot.send_message(message.chat.id, "Это публикация не содержит видео.")
+                    else:
+                        await bot.send_message(message.chat.id, "Не удалось найти медиа в ответе API.")
+                else:
+                    error_message = await response.text()
+                    await bot.send_message(message.chat.id, f"API Error: HTTP {response.status}\nDetails: {error_message}")
     except Exception as e:
-        logger.exception(f"Error downloading Instagram content: {str(e)}")
-        return None
-
-
-async def process_instagram(message, bot: Bot, instagram_url: str):
-    try:
-        logger.info(f"Processing Instagram URL: {instagram_url}")
-
-        # Загружаем контент
-        video_path = await download_instagram_content(instagram_url)
-
-        if video_path and os.path.exists(video_path):
-            logger.info(f"Video available at: {video_path}")
-
-            file_size = os.path.getsize(video_path)
-            logger.info(f"File size: {file_size} bytes")
-
-            try:
-                # Отправляем видео
-                video_file = FSInputFile(video_path)
-                sent_video = await bot.send_video(
-                    chat_id=message.chat.id,
-                    video=video_file,
-                    # caption="Here's your Instagram video!"
-                )
-                logger.info(f"Video sent successfully. Message ID: {
-                            sent_video.message_id}")
-
-                # Отправляем видео как документ
-                doc_filename = f"instagram_video_{message.from_user.id}.mp4"
-                doc_file = FSInputFile(video_path, filename=doc_filename)
-                sent_document = await bot.send_document(
-                    chat_id=message.chat.id,
-                    document=doc_file,
-                    # caption="Here's your Instagram video as a file!",
-                    disable_content_type_detection=True
-                )
-                logger.info(f"Video document sent successfully. Message ID: {
-                            sent_document.message_id}")
-
-            except Exception as send_error:
-                logger.exception(f"Error sending content: {str(send_error)}")
-                await message.reply(f"Error sending content: {str(send_error)}")
-            finally:
-                # Удаляем временный файл
-                try:
-                    os.remove(video_path)
-                    logger.info(f"Temporary file deleted: {video_path}")
-                except Exception as delete_error:
-                    logger.exception(f"Error deleting temporary file: {
-                                     str(delete_error)}")
-        else:
-            logger.warning("No video content available.")
-            await message.reply("This Instagram post is not a video or the video couldn't be downloaded.")
-
-    except Exception as e:
-        logger.exception(f"Error processing Instagram content: {str(e)}")
-        await message.reply(f"Error processing Instagram content: {str(e)}")
+        await bot.send_message(message.chat.id, f"Ошибка при обработке Instagram видео: {str(e)}")
