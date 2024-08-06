@@ -17,11 +17,12 @@ class DownloadVideo(StatesGroup):
 
 
 async def send_welcome(message: types.Message, state: FSMContext):
-    await message.answer("👋 Hi! I can download videos from Instagram Reels and TikTok. "
-                         "Available commands:\n\n"
+    await message.answer("<b>👋 Hi!\n I can download videos from Instagram Reels, TikTok, YouTube, and Facebook.</b>\n\n"
+                         "<b>Available commands:</b>\n\n"
                          "/start - start working with the bot\n"
                          "/help - get help\n\n"
-                         "Just send me a video link, and I'll return it as a video message and a file.")
+                         "Just send me a video link, and I'll return it as a video message and a file.",
+                         parse_mode="HTML")
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
