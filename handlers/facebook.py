@@ -6,7 +6,7 @@ from aiogram.types import URLInputFile
 from config import RAPIDAPI_KEY
 
 
-async def process_youtube(message, bot, youtube_url):
+async def process_facebook(message, bot, youtube_url):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://social-media-video-downloader.p.rapidapi.com/smvd/get/all",
@@ -40,18 +40,18 @@ async def process_youtube(message, bot, youtube_url):
             await bot.send_video(
                 chat_id=message.chat.id,
                 video=video_file,
-                # caption=f"Here's your YouTube video: {data['title']}"
+                # caption=f"Here's your Facebook video: {data['title']}"
             )
-            file_name = f"youtube_video_{message.from_user.id}.mp4"
+            file_name = f"facebook_video_{message.from_user.id}.mp4"
             doc_file = URLInputFile(video_url, filename=file_name)
             await bot.send_document(
                 chat_id=message.chat.id,
                 document=doc_file,
-                # caption=f"Here's your YouTube video as a file: {
+                # caption=f"Here's your Facebook video as a file: {
                 #     data['title']}",
                 disable_content_type_detection=True
             )
         else:
             await bot.send_message(message.chat.id, "Failed to retrieve the URL of the video.")
     except Exception as e:
-        await bot.send_message(message.chat.id, f"Error processing YouTube video: {str(e)}")
+        await bot.send_message(message.chat.id, f"Error processing Facebook video: {str(e)}")

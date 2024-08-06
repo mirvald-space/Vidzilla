@@ -26,7 +26,6 @@ async def process_tiktok(message, bot, tiktok_url):
         if response.status == 200:
             data = json.loads(response.read().decode())
 
-            # Выводим полный ответ API для отладки
             print(f"Full API response: {json.dumps(data, indent=2)}")
 
             if 'links' in data and len(data['links']) > 0:
@@ -44,7 +43,7 @@ async def process_tiktok(message, bot, tiktok_url):
             await bot.send_video(
                 chat_id=message.chat.id,
                 video=video_file,
-                caption="Here's your TikTok video!"
+                # caption="Here's your TikTok video!"
             )
 
             file_name = f"tiktok_video_{message.from_user.id}.mp4"
@@ -52,7 +51,7 @@ async def process_tiktok(message, bot, tiktok_url):
             await bot.send_document(
                 chat_id=message.chat.id,
                 document=doc_file,
-                caption="Here's your TikTok video as a file!",
+                # caption="Here's your TikTok video as a file!",
                 disable_content_type_detection=True
             )
         else:

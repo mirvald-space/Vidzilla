@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
 
+from handlers.facebook import process_facebook
 from handlers.instagram import process_instagram
 from handlers.tiktok import process_tiktok
 from handlers.youtube import process_youtube
@@ -49,6 +50,8 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
             await process_tiktok(message, bot, url)
         elif 'youtube.com' in url or 'youtu.be' in url:
             await process_youtube(message, bot, url)
+        elif 'facebook.com' in url:
+            await process_facebook(message, bot, url)
         else:
             await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, or YouTube.")
     except Exception as e:

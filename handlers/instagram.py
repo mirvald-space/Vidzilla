@@ -65,7 +65,7 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                 sent_video = await bot.send_video(
                     chat_id=message.chat.id,
                     video=video_file,
-                    caption="Here's your Instagram video!"
+                    # caption="Here's your Instagram video!"
                 )
                 logger.info(f"Video sent successfully. Message ID: {
                             sent_video.message_id}")
@@ -76,7 +76,7 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                 sent_document = await bot.send_document(
                     chat_id=message.chat.id,
                     document=doc_file,
-                    caption="Here's your Instagram video as a file!",
+                    # caption="Here's your Instagram video as a file!",
                     disable_content_type_detection=True
                 )
                 logger.info(f"Video document sent successfully. Message ID: {
