@@ -16,11 +16,11 @@ async def process_instagram(message, bot, instagram_url):
         async with aiohttp.ClientSession() as session:
             # Первый запрос к API Instagram Media Downloader
             async with session.get(
-                "https://instagram-audio-downloader.p.rapidapi.com/",
+                "https://instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com/get-info-rapidapi",
                 params={"url": instagram_url},
                 headers={
                     "X-RapidAPI-Key": RAPIDAPI_KEY,
-                    "X-RapidAPI-Host": "instagram-audio-downloader.p.rapidapi.com"
+                    "X-RapidAPI-Host": "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com"
                 }
             ) as response:
                 if response.status == 200:
