@@ -132,7 +132,13 @@ async def handle_coupon_generation(callback_query: CallbackQuery, state: FSMCont
         return
 
     coupon_code = create_coupon(duration)
-    await callback_query.message.answer(f"Coupon generated successfully: {coupon_code}")
+
+    # Send success message
+    await callback_query.message.answer("Coupon generated successfully!")
+
+    # Send coupon code in a separate message
+    await callback_query.message.answer(f"`{coupon_code}`", parse_mode="Markdown")
+
     await callback_query.answer()
     await state.clear()
 
