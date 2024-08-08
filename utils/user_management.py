@@ -1,0 +1,120 @@
+# user_management.py
+
+from datetime import datetime, timedelta
+
+from pymongo import MongoClient
+
+# MongoDB connection
+client = MongoClient(
+    'mongodb+srv://mdalmamunit427:4EsikB9hND59Pvga@jobportal.a2ilieo.mongodb.net/?retryWrites=true&w=majority')
+db = client['video_downloader_bot']
+users_collection = db['users']
+coupons_collection = db['coupons']
+
+ADMIN_IDS = [6630193374]
+FREE_LIMIT = 3
+
+
+def get_user(user_id):
+    return users_collection.find_one({'user_id': user_id})
+
+
+def create_user(user_id):
+    user = {
+        'user_id': user_id,
+        'downloads_count': 0,
+        'subscription_end': None
+    }
+    users_collection.insert_one(user)
+    return user
+
+
+def increment_downloads(user_id):
+    users_collection.update_one(
+        {'user_id': user_id},
+        {'$inc': {'downloads_count': 1}}
+    )
+
+
+def check_user_limit(user_id):
+    user = get_user(user_id) or create_user(user_id)
+
+    if user['subscription_end'] and user['subscription_end'] > datetime.now():
+        return True
+
+    if user['downloads_count'] < FREE_LIMIT:
+        increment_downloads(user_id)
+        return True
+
+    return False
+
+
+def create_coupon(duration):
+    coupon_code = f"COUPON-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    coupons_collection.insert_one({
+        'code': coupon_code,
+        'duration': duration,
+        'used': False,
+        'created_at': datetime.now()
+    })
+    return coupon_code
+
+
+def activate_coupon(user_id, coupon_code):
+    coupon = coupons_collection.find_one({'code': coupon_code, 'used': False})
+    if not coupon:
+        return False
+
+    duration_map = {
+        '1month': timedelta(days=30),
+        '3months': timedelta(days=90),
+        'lifetime': timedelta(days=36500)  # ~100 years
+    }
+
+    duration = duration_map.get(coupon['duration'])
+    if not duration:
+        return False
+
+    users_collection.update_one(
+        {'user_id': user_id},
+        {'$set': {'subscription_end': datetime.now() + duration}}
+    )
+
+    coupons_collection.update_one(
+        {'code': coupon_code},
+        {'$set': {'used': True, 'used_by': user_id, 'used_at': datetime.now()}}
+    )
+
+    return True
+
+
+def get_limit_exceeded_message():
+    return f"You have exceeded the free limit of {FREE_LIMIT} downloads. Please contact an admin to get access to unlimited downloads."
+
+
+def is_admin(user_id):
+    return user_id in ADMIN_IDS
+
+
+def get_usage_stats():
+    total_users = users_collection.count_documents({})
+    active_subscriptions = users_collection.count_documents(
+        {'subscription_end': {'$gt': datetime.now()}})
+    total_downloads = sum(user['downloads_count']
+                          for user in users_collection.find())
+    unused_coupons = coupons_collection.count_documents({'used': False})
+
+    return {
+        'total_users': total_users,
+        'active_subscriptions': active_subscriptions,
+        'total_downloads': total_downloads,
+        'unused_coupons': unused_coupons
+    }
+
+
+async def handle_coupon_activation(message):
+    coupon_code = message.text.strip()
+    if activate_coupon(message.from_user.id, coupon_code):
+        await message.answer("Coupon activated successfully! You now have access to unlimited downloads.")
+    else:
+        await message.answer("Invalid or already used coupon code. Please try again or contact the admin.")
