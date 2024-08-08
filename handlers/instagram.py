@@ -28,8 +28,8 @@ async def process_instagram(message, bot, instagram_url):
                     # logger.info(f"Full API response: {
                     #             json.dumps(data, indent=2)}")
 
-                    if 'video' in data:
-                        video_url = data['video']
+                    if 'download_url' in data:
+                        video_url = data['download_url']
                         logger.info(
                             f"Attempting to access video URL: {video_url}")
 
