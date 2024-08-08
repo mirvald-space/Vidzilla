@@ -25,8 +25,8 @@ async def process_instagram(message, bot, instagram_url):
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    logger.info(f"Full API response: {
-                                json.dumps(data, indent=2)}")
+                    # logger.info(f"Full API response: {
+                    #             json.dumps(data, indent=2)}")
 
                     if 'video' in data:
                         video_url = data['video']
