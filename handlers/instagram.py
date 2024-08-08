@@ -56,10 +56,10 @@ async def process_instagram(message, bot, instagram_url):
 
                         # Запрос видео
                         async with session.head(video_url, headers=headers) as video_response:
-                            logger.info(f"Video response status: {
-                                        video_response.status}")
-                            logger.info(f"Video response headers: {
-                                        video_response.headers}")
+                            # logger.info(f"Video response status: {
+                            #             video_response.status}")
+                            # logger.info(f"Video response headers: {
+                            #             video_response.headers}")
 
                             if video_response.status == 200:
                                 try:
