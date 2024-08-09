@@ -4,7 +4,7 @@ from typing import List
 
 import aiohttp
 from aiogram import Bot
-from aiogram.types import InputMediaPhoto, InputMediaVideo
+from aiogram.types import InputMediaVideo
 
 from config import RAPIDAPI_KEY
 
@@ -29,48 +29,34 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                     data = await response.json()
                     logger.info(f"API response: {json.dumps(data, indent=2)}")
 
+                    videos = []
                     if data.get('Type') == 'Carousel':
-                        media_group: List[InputMediaPhoto |
-                                          InputMediaVideo] = []
-                        # Telegram allows max 10 items in a group
-                        for item in data.get('media_with_thumb', [])[:10]:
-                            if item['Type'] == 'Image':
-                                media_group.append(InputMediaPhoto(
-                                    media=item['media'], caption=data['title'] if len(media_group) == 0 else ''))
-                            elif item['Type'] == 'Video':
-                                media_group.append(InputMediaVideo(
-                                    media=item['media'], caption=data['title'] if len(media_group) == 0 else ''))
+                        for item in data.get('media_with_thumb', []):
+                            if item['Type'] == 'Video':
+                                videos.append(item['media'])
+                    elif 'media' in data and isinstance(data['media'], list):
+                        videos = [url for url in data['media']
+                                  if 'video' in url.lower()]
+                    elif 'video' in data:
+                        videos = [data['video']]
 
-                        if media_group:
-                            await bot.send_media_group(chat_id=message.chat.id, media=media_group)
-                            logger.info("Carousel media sent successfully")
-                        else:
-                            await bot.send_message(chat_id=message.chat.id, text="No media found in the carousel.")
-                    elif 'media' in data:
-                        media_url = data['media'][0] if isinstance(
-                            data['media'], list) else data['media']
-                        caption = data.get('title', 'Instagram media')
-
-                        try:
-                            if 'video' in data:
+                    if videos:
+                        caption = data.get('title', 'Instagram video')
+                        for video_url in videos:
+                            try:
                                 await bot.send_video(
                                     chat_id=message.chat.id,
-                                    video=media_url,
+                                    video=video_url,
                                     caption=caption
                                 )
-                            else:
-                                await bot.send_photo(
-                                    chat_id=message.chat.id,
-                                    photo=media_url,
-                                    caption=caption
-                                )
-                            logger.info("Media sent successfully")
-                        except Exception as send_error:
-                            logger.error(f"Error sending media: {
-                                         str(send_error)}")
-                            await bot.send_message(chat_id=message.chat.id, text=f"Error sending media: {str(send_error)}")
+                                logger.info(
+                                    f"Video sent successfully: {video_url}")
+                            except Exception as send_error:
+                                logger.error(f"Error sending video: {
+                                             str(send_error)}")
+                                await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
                     else:
-                        await bot.send_message(chat_id=message.chat.id, text="No media found in the response.")
+                        await bot.send_message(chat_id=message.chat.id, text="No videos found in the Instagram post.")
                 else:
                     error_message = await response.text()
                     logger.error(f"API Error: HTTP {
