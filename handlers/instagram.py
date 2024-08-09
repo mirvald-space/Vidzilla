@@ -1,10 +1,8 @@
 import json
 import logging
-from typing import List
 
 import aiohttp
 from aiogram import Bot
-from aiogram.types import InputMediaVideo
 
 from config import RAPIDAPI_KEY
 
@@ -29,34 +27,24 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                     data = await response.json()
                     logger.info(f"API response: {json.dumps(data, indent=2)}")
 
-                    videos = []
-                    if data.get('Type') == 'Carousel':
-                        for item in data.get('media_with_thumb', []):
-                            if item['Type'] == 'Video':
-                                videos.append(item['media'])
-                    elif 'media' in data and isinstance(data['media'], list):
-                        videos = [url for url in data['media']
-                                  if 'video' in url.lower()]
-                    elif 'video' in data:
-                        videos = [data['video']]
-
-                    if videos:
+                    if 'media' in data:
+                        video_url = data['media']
                         caption = data.get('title', 'Instagram video')
-                        for video_url in videos:
-                            try:
-                                await bot.send_video(
-                                    chat_id=message.chat.id,
-                                    video=video_url,
-                                    caption=caption
-                                )
-                                logger.info(
-                                    f"Video sent successfully: {video_url}")
-                            except Exception as send_error:
-                                logger.error(f"Error sending video: {
-                                             str(send_error)}")
-                                await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
+
+                        try:
+                            await bot.send_video(
+                                chat_id=message.chat.id,
+                                video=video_url,
+                                caption=caption
+                            )
+                            logger.info(
+                                f"Video sent successfully: {video_url}")
+                        except Exception as send_error:
+                            logger.error(f"Error sending video: {
+                                         str(send_error)}")
+                            await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
                     else:
-                        await bot.send_message(chat_id=message.chat.id, text="No videos found in the Instagram post.")
+                        await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post.")
                 else:
                     error_message = await response.text()
                     logger.error(f"API Error: HTTP {
