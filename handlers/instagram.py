@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def process_instagram(message, bot: Bot, instagram_url: str):
+async def process_instagram(message, bot: Bot, instagram_url: str):
     try:
         url = "https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index"
 
@@ -32,7 +32,7 @@ def process_instagram(message, bot: Bot, instagram_url: str):
                 caption = data.get('title', 'Instagram video')
 
                 try:
-                    bot.send_video(
+                    await bot.send_video(
                         chat_id=message.chat.id,
                         video=video_url,
                         caption=caption
@@ -40,16 +40,14 @@ def process_instagram(message, bot: Bot, instagram_url: str):
                     logger.info(f"Video sent successfully: {video_url}")
                 except Exception as send_error:
                     logger.error(f"Error sending video: {str(send_error)}")
-                    bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {
-                                     str(send_error)}")
+                    await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
             else:
-                bot.send_message(chat_id=message.chat.id,
-                                 text="No video found in the Instagram post.")
+                await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post.")
         else:
             error_message = response.text
             logger.error(f"API Error: HTTP {
                          response.status_code}\nDetails: {error_message}")
-            bot.send_message(
+            await bot.send_message(
                 chat_id=message.chat.id,
                 text=f"There was an error processing your request (HTTP {
                     response.status_code}). "
@@ -57,14 +55,14 @@ def process_instagram(message, bot: Bot, instagram_url: str):
             )
     except requests.RequestException as request_error:
         logger.error(f"Network error: {str(request_error)}")
-        bot.send_message(
+        await bot.send_message(
             chat_id=message.chat.id,
             text="There was a network error while trying to process your request. "
             "Please check your internet connection and try again."
         )
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
-        bot.send_message(
+        await bot.send_message(
             chat_id=message.chat.id,
             text="An unexpected error occurred while processing your request. "
             "Please try again later or contact support if the issue persists."
