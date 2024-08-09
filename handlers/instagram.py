@@ -3,6 +3,7 @@ import logging
 
 import requests
 from aiogram import Bot
+from aiogram.types import FSInputFile
 
 from config import RAPIDAPI_KEY
 
@@ -32,12 +33,35 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                 caption = data.get('title', 'Instagram video')
 
                 try:
+                    # Отправка видео как видеосообщения
                     await bot.send_video(
                         chat_id=message.chat.id,
                         video=video_url,
                         caption=caption
                     )
-                    logger.info(f"Video sent successfully: {video_url}")
+                    logger.info(
+                        f"Video sent successfully as video message: {video_url}")
+
+                    # Скачивание видео во временный файл
+                    video_response = requests.get(video_url)
+                    if video_response.status_code == 200:
+                        with open('temp_video.mp4', 'wb') as file:
+                            file.write(video_response.content)
+
+                        # Отправка видео как документа
+                        video_file = FSInputFile('temp_video.mp4')
+                        await bot.send_document(
+                            chat_id=message.chat.id,
+                            document=video_file,
+                            caption=f"{caption} (as document)"
+                        )
+                        logger.info(
+                            f"Video sent successfully as document: {video_url}")
+                    else:
+                        logger.error(f"Failed to download video: HTTP {
+                                     video_response.status_code}")
+                        await bot.send_message(chat_id=message.chat.id, text="Failed to download video for document sending.")
+
                 except Exception as send_error:
                     logger.error(f"Error sending video: {str(send_error)}")
                     await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
