@@ -108,7 +108,7 @@ def activate_coupon(user_id, coupon_code):
 
 
 def get_limit_exceeded_message():
-    return f"You have exceeded the free limit of {FREE_LIMIT} downloads. Please contact an admin to get access to unlimited downloads."
+    return f"You have exceeded the free limit of {FREE_LIMIT} downloads.\n\n Please contact an admin to get access to unlimited downloads.\n\nTo activate the coupon you need to execute the command /activate_coupon"
 
 
 def is_admin(user_id):

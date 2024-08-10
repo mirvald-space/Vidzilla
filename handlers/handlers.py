@@ -108,7 +108,7 @@ async def handle_coupon_activation(message: Message, state: FSMContext):
     activation_result = activate_coupon(message.from_user.id, coupon_code)
 
     if activation_result:
-        await message.answer("Coupon activated successfully! You now have access to unlimited downloads.")
+        await message.answer("Coupon successfully activated! Now you have access to the bot!")
         # Change state back to waiting for link
         await state.set_state(DownloadVideo.waiting_for_link)
     else:
