@@ -1,11 +1,11 @@
-import json
+import asyncio
 import logging
+import os
+import tempfile
 
-import requests
+import instaloader
 from aiogram import Bot
 from aiogram.types import FSInputFile
-
-from config import RAPIDAPI_KEY
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,79 +13,63 @@ logger = logging.getLogger(__name__)
 
 async def process_instagram(message, bot: Bot, instagram_url: str):
     try:
-        url = "https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index"
+        # Extract the shortcode from the URL
+        shortcode = instagram_url.split("/")[-2]
 
-        querystring = {"url": instagram_url}
+        # Initialize instaloader
+        L = instaloader.Instaloader()
 
-        headers = {
-            "x-rapidapi-key": RAPIDAPI_KEY,
-            "x-rapidapi-host": "instagram-downloader-download-instagram-videos-stories.p.rapidapi.com"
-        }
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            # Download the post
+            post = instaloader.Post.from_shortcode(L.context, shortcode)
+            L.download_post(post, target=tmpdirname)
 
-        response = requests.get(url, headers=headers, params=querystring)
+            # Find the video file
+            video_file = next((f for f in os.listdir(
+                tmpdirname) if f.endswith('.mp4')), None)
 
-        if response.status_code == 200:
-            data = response.json()
-            logger.info(f"API response: {json.dumps(data, indent=2)}")
+            if video_file:
+                video_path = os.path.join(tmpdirname, video_file)
+                caption = post.caption if post.caption else 'Instagram video'
 
-            if 'media' in data:
-                video_url = data['media']
-                caption = data.get('title', 'Instagram video')
+                # Send as video
+                await bot.send_video(
+                    chat_id=message.chat.id,
+                    video=FSInputFile(video_path),
+                    caption=caption[:1024]  # Limit caption to 1024 characters
+                )
+                logger.info(
+                    f"Video sent successfully as video message: {video_file}")
 
-                try:
-                    await bot.send_video(
-                        chat_id=message.chat.id,
-                        video=video_url,
-                        caption=caption
-                    )
-                    logger.info(
-                        f"Video sent successfully as video message: {video_url}")
-
-                    video_response = requests.get(video_url)
-                    if video_response.status_code == 200:
-                        with open('temp_video.mp4', 'wb') as file:
-                            file.write(video_response.content)
-
-                        video_file = FSInputFile('temp_video.mp4')
-                        await bot.send_document(
-                            chat_id=message.chat.id,
-                            document=video_file,
-                            caption=f"{caption} (as document)",
-                            disable_content_type_detection=True
-                        )
-                        logger.info(
-                            f"Video sent successfully as document: {video_url}")
-                    else:
-                        logger.error(f"Failed to download video: HTTP {
-                                     video_response.status_code}")
-                        await bot.send_message(chat_id=message.chat.id, text="Failed to download video for document sending.")
-
-                except Exception as send_error:
-                    logger.error(f"Error sending video: {str(send_error)}")
-                    await bot.send_message(chat_id=message.chat.id, text=f"Error sending video: {str(send_error)}")
+                # Send as document
+                await bot.send_document(
+                    chat_id=message.chat.id,
+                    document=FSInputFile(video_path),
+                    caption=f"{caption[:1024]} (as document)",
+                    disable_content_type_detection=True
+                )
+                logger.info(
+                    f"Video sent successfully as document: {video_file}")
             else:
                 await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post.")
-        else:
-            error_message = response.text
-            logger.error(f"API Error: HTTP {
-                         response.status_code}\nDetails: {error_message}")
-            await bot.send_message(
-                chat_id=message.chat.id,
-                text=f"There was an error processing your request (HTTP {
-                    response.status_code}). "
-                "Please try again later or contact support if the issue persists."
-            )
-    except requests.RequestException as request_error:
-        logger.error(f"Network error: {str(request_error)}")
+
+    except instaloader.exceptions.InstaloaderException as e:
+        logger.error(f"Instaloader error: {str(e)}")
         await bot.send_message(
             chat_id=message.chat.id,
-            text="There was a network error while trying to process your request. "
-            "Please check your internet connection and try again."
+            text="There was an error processing your Instagram link. "
+                 "Please make sure the post is public and try again."
         )
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         await bot.send_message(
             chat_id=message.chat.id,
             text="An unexpected error occurred while processing your request. "
-            "Please try again later or contact support if the issue persists."
+                 "Please try again later or contact support if the issue persists."
         )
+
+# Optionally, you can add a function to handle Instagram stories if needed
+# async def process_instagram_story(message, bot: Bot, username: str):
+#     # Implementation for downloading and sending Instagram stories
+#     pass

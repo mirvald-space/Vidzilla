@@ -5,3 +5,4 @@ asyncio
 asyncio
 pymongo
 requests
+instaloader
