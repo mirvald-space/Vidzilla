@@ -18,6 +18,7 @@ from handlers.instagram import process_instagram
 from handlers.tiktok import process_tiktok
 from handlers.youtube import process_youtube
 from utils.user_management import (
+    activate_coupon,
     check_user_limit,
     create_coupon,
     get_limit_exceeded_message,
@@ -100,6 +101,18 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
 async def activate_coupon_command(message: Message, state: FSMContext):
     await message.answer("Please enter your coupon code:")
     await state.set_state(DownloadVideo.waiting_for_coupon)
+
+
+async def handle_coupon_activation(message: Message, state: FSMContext):
+    coupon_code = message.text.strip()
+    activation_result = activate_coupon(message.from_user.id, coupon_code)
+
+    if activation_result:
+        await message.answer("Coupon activated successfully! You now have access to unlimited downloads.")
+        # Change state back to waiting for link
+        await state.set_state(DownloadVideo.waiting_for_link)
+    else:
+        await message.answer("Invalid or already used coupon code. Please try again or contact the admin.")
 
 
 async def generate_coupon_command(message: Message, state: FSMContext):
