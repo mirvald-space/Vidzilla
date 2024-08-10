@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -16,46 +17,51 @@ API_URL = "https://all-media-downloader.p.rapidapi.com/rapid_download/download"
 
 async def process_instagram(message, bot: Bot, instagram_url: str):
     try:
-        payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"url\"\r\n\r\n{
-            instagram_url}\r\n-----011000010111000001101001--\r\n\r\n"
+        payload = {
+            "url": instagram_url
+        }
         headers = {
-            "x-rapidapi-key": RAPIDAPI_KEY,
-            "x-rapidapi-host": RAPIDAPI_HOST,
-            "Content-Type": "multipart/form-data; boundary=---011000010111000001101001"
+            "content-type": "application/x-www-form-urlencoded",
+            "X-RapidAPI-Key": RAPIDAPI_KEY,
+            "X-RapidAPI-Host": RAPIDAPI_HOST
         }
 
         async with aiohttp.ClientSession() as session:
             async with session.post(API_URL, data=payload, headers=headers) as response:
                 if response.status == 200:
-                    data = await response.json()
+                    data = await response.text()
                     logger.info(f"API response: {data}")
 
-                    if 'result' in data and data['result']:
-                        video_url = data['result']['downloadUrl']
-                        caption = data['result'].get(
-                            'caption', 'Instagram video')
+                    # Parse the response as JSON
+                    try:
+                        video_urls = json.loads(data)
+                        if isinstance(video_urls, list) and len(video_urls) > 0:
+                            video_url = video_urls[0]
 
-                        # Send as video
-                        await bot.send_video(
-                            chat_id=message.chat.id,
-                            video=video_url,
-                            # Limit caption to 1024 characters
-                            caption=caption[:1024]
-                        )
-                        logger.info(
-                            f"Video sent successfully as video message")
+                            # Send as video
+                            await bot.send_video(
+                                chat_id=message.chat.id,
+                                video=video_url,
+                                caption="Instagram video"
+                            )
+                            logger.info(
+                                f"Video sent successfully as video message")
 
-                        # Send as document
-                        await bot.send_document(
-                            chat_id=message.chat.id,
-                            document=URLInputFile(
-                                video_url, filename="instagram_video.mp4"),
-                            caption=f"{caption[:1024]} (as document)",
-                            disable_content_type_detection=True
-                        )
-                        logger.info(f"Video sent successfully as document")
-                    else:
-                        await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post. This might be an image post or the API couldn't process it.")
+                            # Send as document
+                            await bot.send_document(
+                                chat_id=message.chat.id,
+                                document=URLInputFile(
+                                    video_url, filename="instagram_video.mp4"),
+                                caption="Instagram video (as document)",
+                                disable_content_type_detection=True
+                            )
+                            logger.info(f"Video sent successfully as document")
+                        else:
+                            await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post. This might be an image post or the API couldn't process it.")
+                    except json.JSONDecodeError:
+                        logger.error(
+                            f"Failed to parse API response as JSON: {data}")
+                        await bot.send_message(chat_id=message.chat.id, text="There was an error processing the API response. Please try again later.")
                 else:
                     error_message = await response.text()
                     logger.error(f"API Error: HTTP {
