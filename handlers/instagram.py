@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 RAPIDAPI_KEY = os.getenv(
-    'RAPIDAPI_KEY', 'a267530cf0msheda24d8f8243cbbp177eabjsnaeb3c18b82da')
+    'RAPIDAPI_KEY')
 RAPIDAPI_HOST = "all-media-downloader.p.rapidapi.com"
 API_URL = "https://all-media-downloader.p.rapidapi.com/download"
 
@@ -38,7 +38,7 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                         await bot.send_video(
                             chat_id=message.chat.id,
                             video=video_url,
-                            caption="Instagram video"
+                            # caption="Instagram video"
                         )
                         logger.info("Video sent successfully as video message")
 
@@ -47,7 +47,7 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
                             chat_id=message.chat.id,
                             document=URLInputFile(
                                 video_url, filename="instagram_video.mp4"),
-                            caption="Instagram video (as document)",
+                            # caption="Instagram video (as document)",
                             disable_content_type_detection=True
                         )
                         logger.info("Video sent successfully as document")
@@ -69,8 +69,3 @@ async def process_instagram(message, bot: Bot, instagram_url: str):
             text="An unexpected error occurred while processing your request. "
                  "Please try again later or contact support if the issue persists."
         )
-
-# Optionally, you can add a function to handle Instagram stories if needed
-# async def process_instagram_story(message, bot: Bot, username: str):
-#     # Implementation for downloading and sending Instagram stories
-#     pass
