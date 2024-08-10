@@ -13,5 +13,11 @@ WEBHOOK_PATH = os.getenv('WEBHOOK_PATH')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 # MongoDB configuration
-MONGO_URI = os.getenv('MONGO_URI')
-MONGO_DB_NAME = os.getenv('MONGO_DB_NAME')
+MONGODB_URI = os.getenv('MONGODB_URI')
+MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'video_downloader_bot')
+MONGODB_USERS_COLLECTION = os.getenv('MONGODB_USERS_COLLECTION', 'users')
+MONGODB_COUPONS_COLLECTION = os.getenv('MONGODB_COUPONS_COLLECTION', 'coupons')
+
+# User management configuration
+ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '').split(',')))
+FREE_LIMIT = int(os.getenv('FREE_LIMIT', 3))

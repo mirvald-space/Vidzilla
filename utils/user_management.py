@@ -1,18 +1,37 @@
 # user_management.py
 
+import logging
 from datetime import datetime, timedelta
 
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
+
+from config import (
+    ADMIN_IDS,
+    FREE_LIMIT,
+    MONGODB_COUPONS_COLLECTION,
+    MONGODB_DB_NAME,
+    MONGODB_URI,
+    MONGODB_USERS_COLLECTION,
+)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # MongoDB connection
-client = MongoClient(
-    'mongodb+srv://mdalmamunit427:4EsikB9hND59Pvga@jobportal.a2ilieo.mongodb.net/?retryWrites=true&w=majority')
-db = client['video_downloader_bot']
-users_collection = db['users']
-coupons_collection = db['coupons']
+try:
+    client = MongoClient(MONGODB_URI)
+    client.admin.command('ping')
+    logger.info("Successfully connected to MongoDB")
+except ConnectionFailure:
+    logger.error(
+        "Failed to connect to MongoDB. Check your connection string and network.")
+    raise
 
-ADMIN_IDS = [6630193374]
-FREE_LIMIT = 3
+db = client[MONGODB_DB_NAME]
+users_collection = db[MONGODB_USERS_COLLECTION]
+coupons_collection = db[MONGODB_COUPONS_COLLECTION]
 
 
 def get_user(user_id):
