@@ -13,10 +13,7 @@ from aiogram.types import (
     Message,
 )
 
-from handlers.facebook import process_facebook
-from handlers.instagram import process_instagram
-from handlers.tiktok import process_tiktok
-from handlers.youtube import process_youtube
+from handlers import facebook, instagram, pinterest, tiktok, youtube
 from utils.user_management import (
     activate_coupon,
     check_user_limit,
@@ -82,13 +79,15 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
     await message.answer("Processing your link...")
     try:
         if 'instagram.com' in url:
-            await process_instagram(message, bot, url)
+            await instagram.process_instagram(message, bot, url)
         elif 'tiktok.com' in url:
-            await process_tiktok(message, bot, url)
+            await tiktok.process_tiktok(message, bot, url)
         elif 'youtube.com' in url or 'youtu.be' in url:
-            await process_youtube(message, bot, url)
+            await youtube.process_youtube(message, bot, url)
         elif 'facebook.com' in url:
-            await process_facebook(message, bot, url)
+            await facebook.process_facebook(message, bot, url)
+        elif 'pin.it' in url:
+            await pinterest.process_pinterest(message, bot, url)
         else:
             await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, YouTube, or Facebook.")
     except Exception as e:

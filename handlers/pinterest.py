@@ -6,7 +6,7 @@ from aiogram.types import URLInputFile
 from config import RAPIDAPI_KEY
 
 
-async def process_tiktok(message, bot, pinterest_url):
+async def process_pinterest(message, bot, pinterest_url):
     try:
         url = "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink"
         payload = {"url": pinterest_url}
@@ -29,7 +29,7 @@ async def process_tiktok(message, bot, pinterest_url):
                 video=video_file
             )
 
-            file_name = f"tiktok_video{message.from_user.id}.mp4"
+            file_name = f"pinterest_video{message.from_user.id}.mp4"
             doc_file = URLInputFile(video_url, filename=file_name)
             await bot.send_document(
                 chat_id=message.chat.id,
@@ -38,8 +38,8 @@ async def process_tiktok(message, bot, pinterest_url):
             )
         else:
             error_message = data.get(
-                'message', 'Failed to retrieve the video from TikTok')
+                'message', 'Failed to retrieve the video from Pinterest')
             await bot.send_message(message.chat.id, f"Error: {error_message}")
 
     except Exception as e:
-        await bot.send_message(message.chat.id, f"Error processing Tiktok video: {str(e)}")
+        await bot.send_message(message.chat.id, f"Error processing Pinterest video: {str(e)}")
