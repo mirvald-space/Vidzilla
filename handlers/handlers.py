@@ -13,7 +13,7 @@ from aiogram.types import (
     Message,
 )
 
-from handlers import facebook, instagram, pinterest, tiktok, youtube
+from handlers import facebook, instagram, pinterest, tiktok, twitter, youtube
 from utils.user_management import (
     activate_coupon,
     check_user_limit,
@@ -82,6 +82,8 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
             await instagram.process_instagram(message, bot, url)
         elif 'tiktok.com' in url:
             await tiktok.process_tiktok(message, bot, url)
+        elif 'x.com' in url:
+            await twitter.process_twitter(message, bot, url)
         elif 'youtube.com' in url or 'youtu.be' in url:
             await youtube.process_youtube(message, bot, url)
         elif 'facebook.com' in url:

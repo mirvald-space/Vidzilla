@@ -6,10 +6,10 @@ from aiogram.types import URLInputFile
 from config import RAPIDAPI_KEY
 
 
-async def process_youtube(message, bot, youtube_url):
+async def process_twitter(message, bot, twitter_url):
     try:
         url = "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink"
-        payload = {"url": youtube_url}
+        payload = {"url": twitter_url}
         headers = {
             "x-rapidapi-key": RAPIDAPI_KEY,
             "x-rapidapi-host": "auto-download-all-in-one.p.rapidapi.com",
@@ -29,7 +29,7 @@ async def process_youtube(message, bot, youtube_url):
                 video=video_file
             )
 
-            file_name = f"yotube_video{message.from_user.id}.mp4"
+            file_name = f"twitter_url_video{message.from_user.id}.mp4"
             doc_file = URLInputFile(video_url, filename=file_name)
             await bot.send_document(
                 chat_id=message.chat.id,
@@ -38,8 +38,8 @@ async def process_youtube(message, bot, youtube_url):
             )
         else:
             error_message = data.get(
-                'message', 'Failed to retrieve the video from Youtube')
+                'message', 'Failed to retrieve the video from Twitter')
             await bot.send_message(message.chat.id, f"Error: {error_message}")
 
     except Exception as e:
-        await bot.send_message(message.chat.id, f"Error processing Youtube video: {str(e)}")
+        await bot.send_message(message.chat.id, f"Error processing Twitter video: {str(e)}")

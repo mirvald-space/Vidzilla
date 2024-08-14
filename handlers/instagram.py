@@ -1,71 +1,54 @@
-import json
-import logging
 import os
+import time
 
-import aiohttp
-from aiogram import Bot
-from aiogram.types import URLInputFile
+import ddinsta
+from aiogram.types import FSInputFile
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from config import TEMP_DIRECTORY
 
-RAPIDAPI_KEY = os.getenv(
-    'RAPIDAPI_KEY')
-RAPIDAPI_HOST = "all-media-downloader.p.rapidapi.com"
-API_URL = "https://all-media-downloader.p.rapidapi.com/download"
+# Убедимся, что временная директория существует
+os.makedirs(TEMP_DIRECTORY, exist_ok=True)
 
 
-async def process_instagram(message, bot: Bot, instagram_url: str):
+async def process_instagram(message, bot, instagram_url):
     try:
-        payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"url\"\r\n\r\n{
-            instagram_url}\r\n-----011000010111000001101001--\r\n\r\n"
-        headers = {
-            "x-rapidapi-key": RAPIDAPI_KEY,
-            "x-rapidapi-host": RAPIDAPI_HOST,
-            "Content-Type": "multipart/form-data; boundary=---011000010111000001101001"
-        }
+        # Генерируем уникальное имя файла
+        temp_file_name = f"temp_video_{
+            message.from_user.id}_{int(time.time())}.mp4"
+        temp_file_path = os.path.join(TEMP_DIRECTORY, temp_file_name)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(API_URL, data=payload, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    logger.info(f"API response: {json.dumps(data, indent=2)}")
+        # Download video using ddinsta
+        result = ddinsta.save_video(instagram_url)
 
-                    if isinstance(data, list) and len(data) > 0:
-                        video_url = data[0]
+        if result == '[!] Success':
+            # Ищем последний созданный файл в текущей директории
+            files = [f for f in os.listdir('.') if f.endswith('.mp4')]
+            if files:
+                latest_file = max(files, key=os.path.getctime)
+                # Перемещаем файл в нашу временную директорию
+                os.rename(latest_file, temp_file_path)
 
-                        # Send as video
-                        await bot.send_video(
-                            chat_id=message.chat.id,
-                            video=video_url,
-                            # caption="Instagram video"
-                        )
-                        logger.info("Video sent successfully as video message")
+                # Send video
+                video_file = FSInputFile(temp_file_path)
+                await bot.send_video(
+                    chat_id=message.chat.id,
+                    video=video_file
+                )
 
-                        # Send as document
-                        await bot.send_document(
-                            chat_id=message.chat.id,
-                            document=URLInputFile(
-                                video_url, filename="instagram_video.mp4"),
-                            # caption="Instagram video (as document)",
-                            disable_content_type_detection=True
-                        )
-                        logger.info("Video sent successfully as document")
-                    else:
-                        await bot.send_message(chat_id=message.chat.id, text="No video found in the Instagram post. This might be an image post or the API couldn't process it.")
-                else:
-                    error_message = await response.text()
-                    logger.error(f"API Error: HTTP {
-                                 response.status}\nDetails: {error_message}")
-                    await bot.send_message(
-                        chat_id=message.chat.id,
-                        text=f"There was an error processing your Instagram link. Please try again later."
-                    )
+                # Send as document
+                file_name = f"instagram_video_{message.from_user.id}.mp4"
+                doc_file = FSInputFile(temp_file_path, filename=file_name)
+                await bot.send_document(
+                    chat_id=message.chat.id,
+                    document=doc_file,
+                    disable_content_type_detection=True
+                )
 
+                # Clean up the temporary file
+                os.remove(temp_file_path)
+            else:
+                await bot.send_message(message.chat.id, "Error: Video file not found after download")
+        else:
+            await bot.send_message(message.chat.id, f"Error: Failed to retrieve the video from Instagram. {result}")
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text="An unexpected error occurred while processing your request. "
-                 "Please try again later or contact support if the issue persists."
-        )
+        await bot.send_message(message.chat.id, f"Error processing Instagram video: {str(e)}")

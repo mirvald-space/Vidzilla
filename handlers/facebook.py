@@ -6,10 +6,10 @@ from aiogram.types import URLInputFile
 from config import RAPIDAPI_KEY
 
 
-async def process_facebook(message, bot, pinterest_url):
+async def process_facebook(message, bot, facebook_url):
     try:
         url = "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink"
-        payload = {"url": pinterest_url}
+        payload = {"url": facebook_url}
         headers = {
             "x-rapidapi-key": RAPIDAPI_KEY,
             "x-rapidapi-host": "auto-download-all-in-one.p.rapidapi.com",
