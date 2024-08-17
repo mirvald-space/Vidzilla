@@ -1,6 +1,9 @@
 # Social Media Video Downloader Bot
 
-This Telegram bot allows users to download videos from various social media platforms including Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest. It provides an easy way to save and share content from these popular social media platforms.
+Easily download and share videos from your favorite social media platforms with our Telegram bot! Whether it's Instagram Reels, TikTok, YouTube, Facebook, Twitter, or Pinterest, this bot has got you covered. Perfect for those who want to save content for offline viewing or reposting.
+
+🎥 **Save videos from multiple platforms in a snap!**
+🚀 **Simple, fast, and user-friendly!**
 
 ## Features
 
@@ -9,6 +12,17 @@ This Telegram bot allows users to download videos from various social media plat
 - User management system with free and premium tiers
 - Admin functionality for generating coupons and viewing usage statistics
 - Simple and user-friendly interface
+
+## Supported Platforms
+
+| Platform     | Status  |
+| ------------ | ------- |
+| Instagram    | ✅       |
+| TikTok       | ✅       |
+| YouTube      | ✅       |
+| Facebook     | ✅       |
+| Twitter      | ✅       |
+| Pinterest    | ✅       |
 
 ## Commands
 
@@ -93,6 +107,10 @@ This bot uses the Social Media Video Downloader API from RapidAPI to fetch video
 ## Note
 
 Ensure you comply with the terms of service of all supported platforms when using this bot.
+
+## Contributing
+
+We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING.md) for details on how to get started.
 
 ## License
 
