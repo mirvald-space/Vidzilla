@@ -1,76 +1,71 @@
-# handlers.py
-
-import re
-
 from aiogram import Bot, types
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import (
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    Message,
-)
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from config import SUBSCRIPTION_PLANS
+from config import ADMIN_IDS, FREE_LIMIT, SUBSCRIPTION_PLANS
 from handlers import facebook, instagram, pinterest, tiktok, twitter, youtube
-from utils.stripe_utils import create_checkout_session, verify_payment
+from utils.stripe_utils import create_checkout_session
 from utils.user_management import (
     activate_coupon,
     check_user_limit,
     create_coupon,
     get_limit_exceeded_message,
     get_usage_stats,
-    handle_coupon_activation,
     is_admin,
-    update_subscription,
 )
 
 
 class DownloadVideo(StatesGroup):
     waiting_for_link = State()
-    waiting_for_coupon = State()
-    waiting_for_plan = State()
-    waiting_for_payment = State()
 
 
 class AdminActions(StatesGroup):
     waiting_for_coupon_duration = State()
+    waiting_for_coupon = State()
 
 
 async def send_welcome(message: Message, state: FSMContext):
-    await message.answer("<b>👋 Hi!\n I can download videos from Instagram Reels, TikTok, YouTube, and Facebook.</b>\n\n"
-                         "<b>Available commands:</b>\n\n"
-                         "/start - start working with the bot\n"
-                         "/help - get help\n"
-                         "/activate_coupon - activate a coupon code\n\n"
-                         "Just send me a video link, and I'll return it as a video message and a file.",
-                         parse_mode="HTML")
+    await message.answer(
+        "<b>👋 Hi! Welcome to the Social Media Video Downloader Bot!</b>\n\n"
+        f"I can download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.\n\n"
+        f"<b>🎁 Free Trial:</b> You have {
+            FREE_LIMIT} free downloads to try out the bot.\n\n"
+        "<b>Available commands:</b>\n"
+        "/start - Start working with the bot\n"
+        "/help - Get detailed help\n"
+        "/subscribe - View subscription plans\n\n"
+        "To use the bot, simply send me a video link from any supported platform.\n\n"
+        f"<b>💡 Tip:</b> If you need more than {
+            FREE_LIMIT} downloads, check out our subscription plans with /subscribe command!",
+        parse_mode="HTML"
+    )
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
 async def send_help(message: Message):
-    help_text = ("This bot helps download videos from Instagram Reels, TikTok, YouTube, and Facebook.\n\n"
-                 "How to use:\n"
-                 "1. Send the bot a link to a video.\n"
-                 "2. The bot will process the link and return the video in two formats:\n"
-                 "   - As a video message\n"
-                 "   - As a document file\n\n"
-                 "Supported services:\n"
-                 "- Instagram Reels\n"
-                 "- TikTok\n"
-                 "- YouTube\n"
-                 "- Facebook\n\n"
-                 "Commands:\n"
-                 "/start - start working with the bot\n"
-                 "/help - show this help message\n"
-                 "/activate_coupon - activate a coupon code")
+    help_text = (
+        "This bot helps download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.\n\n"
+        "How to use:\n"
+        "1. Send the bot a link to a video.\n"
+        "2. The bot will process the link and return the video in two formats:\n"
+        "   - As a video message\n"
+        "   - As a document file\n\n"
+        f"You have {
+            FREE_LIMIT} free downloads. After that, you'll need to subscribe.\n\n"
+        "Commands:\n"
+        "/start - Start working with the bot\n"
+        "/help - Show this help message\n"
+        "/subscribe - View and purchase subscription plans"
+    )
 
     if is_admin(message.from_user.id):
-        help_text += ("\n\nAdmin commands:\n"
-                      "/generate_coupon - generate a new coupon\n"
-                      "/stats - view usage statistics")
+        help_text += (
+            "\n\nAdmin commands:\n"
+            "/generate_coupon - Generate a new coupon\n"
+            "/stats - View usage statistics"
+        )
 
     await message.answer(help_text)
 
@@ -87,20 +82,19 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
             await instagram.process_instagram(message, bot, url)
         elif 'tiktok.com' in url:
             await tiktok.process_tiktok(message, bot, url)
-        elif 'x.com' in url:
+        elif 'x.com' in url or 'twitter.com' in url:
             await twitter.process_twitter(message, bot, url)
         elif 'youtube.com' in url or 'youtu.be' in url:
             await youtube.process_youtube(message, bot, url)
         elif 'facebook.com' in url:
             await facebook.process_facebook(message, bot, url)
-        elif 'pin.it' in url:
+        elif 'pin.it' in url or 'pinterest.com' in url:
             await pinterest.process_pinterest(message, bot, url)
         else:
-            await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, YouTube, or Facebook.")
+            await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, YouTube, Facebook, Twitter, or Pinterest.")
     except Exception as e:
         await message.answer(f"Error processing video: {str(e)}")
 
-    await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
@@ -109,8 +103,7 @@ async def subscribe_command(message: Message, state: FSMContext):
     keyboard = []
 
     for plan, details in SUBSCRIPTION_PLANS.items():
-        price_in_dollars = details['price'] / \
-            100  # Конвертируем центы в доллары
+        price_in_dollars = details['price'] / 100  # Convert cents to dollars
         button_text = f"{details['name']} - ${price_in_dollars:.2f}"
         checkout_url = create_checkout_session(plan, user_id)
         keyboard.append([InlineKeyboardButton(
@@ -118,57 +111,6 @@ async def subscribe_command(message: Message, state: FSMContext):
 
     reply_markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     await message.answer("Please choose a subscription plan:", reply_markup=reply_markup)
-    await state.set_state(DownloadVideo.waiting_for_plan)
-
-
-async def handle_subscription_choice(callback_query: CallbackQuery, state: FSMContext):
-    plan = callback_query.data.split('_')[1]
-    user_id = callback_query.from_user.id
-
-    session = create_checkout_session(plan, user_id)
-
-    await state.update_data(plan=plan, session_id=session.id)
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Pay now", url=session.url)]
-    ])
-
-    await callback_query.message.answer("Click the button below to proceed with the payment:", reply_markup=keyboard)
-    await state.set_state(DownloadVideo.waiting_for_payment)
-
-
-async def handle_successful_payment(message: Message, state: FSMContext):
-    data = await state.get_data()
-    session_id = data.get('session_id')
-    plan = data.get('plan')
-
-    if verify_payment(session_id):
-        if update_subscription(message.from_user.id, plan):
-            await message.answer("Thank you for your purchase! Your subscription has been activated.")
-        else:
-            await message.answer("There was an error activating your subscription. Please contact support.")
-    else:
-        await message.answer("Payment verification failed. Please try again or contact support.")
-
-    await state.clear()
-    await state.set_state(DownloadVideo.waiting_for_link)
-
-
-async def activate_coupon_command(message: Message, state: FSMContext):
-    await message.answer("Please enter your coupon code:")
-    await state.set_state(DownloadVideo.waiting_for_coupon)
-
-
-async def handle_coupon_activation(message: Message, state: FSMContext):
-    coupon_code = message.text.strip()
-    activation_result = activate_coupon(message.from_user.id, coupon_code)
-
-    if activation_result:
-        await message.answer("Coupon successfully activated! Now you have access to the bot!")
-        # Change state back to waiting for link
-        await state.set_state(DownloadVideo.waiting_for_link)
-    else:
-        await message.answer("Invalid or already used coupon code. Please try again or contact the admin.")
 
 
 async def generate_coupon_command(message: Message, state: FSMContext):
@@ -188,7 +130,7 @@ async def generate_coupon_command(message: Message, state: FSMContext):
     await state.set_state(AdminActions.waiting_for_coupon_duration)
 
 
-async def handle_coupon_generation(callback_query: CallbackQuery, state: FSMContext):
+async def handle_coupon_generation(callback_query: types.CallbackQuery, state: FSMContext):
     duration_map = {
         'coupon_1month': '1month',
         'coupon_3months': '3months',
@@ -202,10 +144,7 @@ async def handle_coupon_generation(callback_query: CallbackQuery, state: FSMCont
 
     coupon_code = create_coupon(duration)
 
-    # Send success message
     await callback_query.message.answer("Coupon generated successfully!")
-
-    # Send coupon code in a separate message
     await callback_query.message.answer(f"`{coupon_code}`", parse_mode="Markdown")
 
     await callback_query.answer()
@@ -218,29 +157,44 @@ async def stats_command(message: Message):
         return
 
     stats = get_usage_stats()
-    stats_message = (f"Usage Statistics:\n\n"
-                     f"Total Users: {stats['total_users']}\n"
-                     f"Active Subscriptions: {stats['active_subscriptions']}\n"
-                     f"Total Downloads: {stats['total_downloads']}\n"
-                     f"Unused Coupons: {stats['unused_coupons']}")
+    stats_message = (
+        f"Usage Statistics:\n\n"
+        f"Total Users: {stats['total_users']}\n"
+        f"Active Subscriptions: {stats['active_subscriptions']}\n"
+        f"Total Downloads: {stats['total_downloads']}\n"
+        f"Unused Coupons: {stats['unused_coupons']}"
+    )
     await message.answer(stats_message)
+
+
+async def activate_coupon_command(message: Message, state: FSMContext):
+    await message.answer("Please enter your coupon code:")
+    await state.set_state(AdminActions.waiting_for_coupon)
+
+
+async def handle_coupon_activation(message: Message, state: FSMContext):
+    coupon_code = message.text.strip()
+    activation_result = activate_coupon(message.from_user.id, coupon_code)
+
+    if activation_result:
+        await message.answer("Coupon successfully activated! You now have access to premium features.")
+    else:
+        await message.answer("Invalid or already used coupon code. Please try again or contact the admin.")
+
+    await state.set_state(DownloadVideo.waiting_for_link)
 
 
 def register_handlers(dp):
     dp.message.register(send_welcome, Command(commands=['start']))
     dp.message.register(send_help, Command(commands=['help']))
-    dp.message.register(activate_coupon_command,
-                        Command(commands=['activate_coupon']))
+    dp.message.register(subscribe_command, Command(commands=['subscribe']))
     dp.message.register(generate_coupon_command,
                         Command(commands=['generate_coupon']))
-    dp.message.register(subscribe_command, Command(commands=['subscribe']))
-    dp.callback_query.register(
-        handle_subscription_choice, DownloadVideo.waiting_for_plan)
-    dp.message.register(handle_successful_payment,
-                        DownloadVideo.waiting_for_payment)
     dp.message.register(stats_command, Command(commands=['stats']))
+    dp.message.register(activate_coupon_command,
+                        Command(commands=['activate_coupon']))
     dp.message.register(process_link, DownloadVideo.waiting_for_link)
-    dp.message.register(handle_coupon_activation,
-                        DownloadVideo.waiting_for_coupon)
     dp.callback_query.register(
         handle_coupon_generation, AdminActions.waiting_for_coupon_duration)
+    dp.message.register(handle_coupon_activation,
+                        AdminActions.waiting_for_coupon)
