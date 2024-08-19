@@ -13,7 +13,9 @@ from aiogram.types import (
     Message,
 )
 
+from config import SUBSCRIPTION_PLANS
 from handlers import facebook, instagram, pinterest, tiktok, twitter, youtube
+from utils.stripe_utils import create_checkout_session, verify_payment
 from utils.user_management import (
     activate_coupon,
     check_user_limit,
@@ -22,12 +24,15 @@ from utils.user_management import (
     get_usage_stats,
     handle_coupon_activation,
     is_admin,
+    update_subscription,
 )
 
 
 class DownloadVideo(StatesGroup):
     waiting_for_link = State()
     waiting_for_coupon = State()
+    waiting_for_plan = State()
+    waiting_for_payment = State()
 
 
 class AdminActions(StatesGroup):
@@ -94,6 +99,56 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
             await message.answer("Unsupported platform. Please provide a link from Instagram, TikTok, YouTube, or Facebook.")
     except Exception as e:
         await message.answer(f"Error processing video: {str(e)}")
+
+    await state.clear()
+    await state.set_state(DownloadVideo.waiting_for_link)
+
+
+async def subscribe_command(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    keyboard = []
+
+    for plan, details in SUBSCRIPTION_PLANS.items():
+        price_in_dollars = details['price'] / \
+            100  # Конвертируем центы в доллары
+        button_text = f"{details['name']} - ${price_in_dollars:.2f}"
+        checkout_url = create_checkout_session(plan, user_id)
+        keyboard.append([InlineKeyboardButton(
+            text=button_text, url=checkout_url)])
+
+    reply_markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    await message.answer("Please choose a subscription plan:", reply_markup=reply_markup)
+    await state.set_state(DownloadVideo.waiting_for_plan)
+
+
+async def handle_subscription_choice(callback_query: CallbackQuery, state: FSMContext):
+    plan = callback_query.data.split('_')[1]
+    user_id = callback_query.from_user.id
+
+    session = create_checkout_session(plan, user_id)
+
+    await state.update_data(plan=plan, session_id=session.id)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Pay now", url=session.url)]
+    ])
+
+    await callback_query.message.answer("Click the button below to proceed with the payment:", reply_markup=keyboard)
+    await state.set_state(DownloadVideo.waiting_for_payment)
+
+
+async def handle_successful_payment(message: Message, state: FSMContext):
+    data = await state.get_data()
+    session_id = data.get('session_id')
+    plan = data.get('plan')
+
+    if verify_payment(session_id):
+        if update_subscription(message.from_user.id, plan):
+            await message.answer("Thank you for your purchase! Your subscription has been activated.")
+        else:
+            await message.answer("There was an error activating your subscription. Please contact support.")
+    else:
+        await message.answer("Payment verification failed. Please try again or contact support.")
 
     await state.clear()
     await state.set_state(DownloadVideo.waiting_for_link)
@@ -178,6 +233,11 @@ def register_handlers(dp):
                         Command(commands=['activate_coupon']))
     dp.message.register(generate_coupon_command,
                         Command(commands=['generate_coupon']))
+    dp.message.register(subscribe_command, Command(commands=['subscribe']))
+    dp.callback_query.register(
+        handle_subscription_choice, DownloadVideo.waiting_for_plan)
+    dp.message.register(handle_successful_payment,
+                        DownloadVideo.waiting_for_payment)
     dp.message.register(stats_command, Command(commands=['stats']))
     dp.message.register(process_link, DownloadVideo.waiting_for_link)
     dp.message.register(handle_coupon_activation,

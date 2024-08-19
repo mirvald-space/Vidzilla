@@ -26,3 +26,15 @@ MONGODB_COUPONS_COLLECTION = os.getenv('MONGODB_COUPONS_COLLECTION')
 # User management configuration
 ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '').split(',')))
 FREE_LIMIT = int(os.getenv('FREE_LIMIT', 3))
+
+# Stripe configuration
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+# Subscription plans
+SUBSCRIPTION_PLANS = {
+    '1month': {'price': 100, 'name': '1 Month Subscription'},
+    '3months': {'price': 500, 'name': '3 Months Subscription'},
+    'lifetime': {'price': 1000, 'name': 'Lifetime Subscription'}
+}

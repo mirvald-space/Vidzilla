@@ -6,3 +6,4 @@ asyncio
 pymongo
 requests
 ddinsta
+stripe

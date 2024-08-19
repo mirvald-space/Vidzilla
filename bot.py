@@ -7,6 +7,7 @@ from aiohttp import web
 
 from config import BOT_TOKEN, WEBHOOK_PATH, WEBHOOK_URL
 from handlers.handlers import register_handlers
+from utils.stripe_webhook_handler import setup_stripe_webhook
 
 logging.basicConfig(level=logging.INFO)
 
@@ -60,6 +61,8 @@ async def create_app():
     )
     webhook_handler.register(app, path=WEBHOOK_PATH)
     setup_application(app, dp, bot=bot)
+
+    setup_stripe_webhook(app)
 
     app.router.add_route('*', '/', handle_root)
     app.router.add_get(WEBHOOK_PATH, handle_webhook_get)

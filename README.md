@@ -10,6 +10,7 @@ Easily download and share videos from your favorite social media platforms with 
 - Download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest
 - Receive videos as both video messages and downloadable files
 - User management system with free and premium tiers
+- Stripe integration for subscription payments
 - Admin functionality for generating coupons and viewing usage statistics
 - Simple and user-friendly interface
 
@@ -28,12 +29,18 @@ Easily download and share videos from your favorite social media platforms with 
 
 - `/start` - Begin interaction with the bot and receive usage instructions
 - `/help` - Get detailed information about the bot's functionality
-- `/activate_coupon` - Activate a coupon code for premium access
+- `/subscribe` - View and select subscription plans
 
 ### Admin Commands
 
 - `/generate_coupon` - Generate a new coupon (admin only)
 - `/stats` - View usage statistics (admin only)
+
+## Subscription Plans
+
+- 1 month subscription
+- 3 months subscription
+- Lifetime subscription
 
 ## Installation and Setup
 
@@ -62,6 +69,9 @@ Easily download and share videos from your favorite social media platforms with 
    - `MONGODB_COUPONS_COLLECTION`: Name of the collection for coupon data
    - `ADMIN_IDS`: Comma-separated list of admin user IDs
    - `FREE_LIMIT`: Number of free downloads allowed per user (default is 3)
+   - `STRIPE_SECRET_KEY`: Your Stripe secret key
+   - `STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key
+   - `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook secret
 
 4. Set up a webhook for your bot on a server with HTTPS support.
 
@@ -70,19 +80,47 @@ Easily download and share videos from your favorite social media platforms with 
    python bot.py
    ```
 
+## Stripe Integration
+
+To set up Stripe for production payments:
+
+1. Create a Stripe account at https://stripe.com if you haven't already.
+2. In the Stripe Dashboard, navigate to the API keys section.
+3. Copy your live secret key and publishable key.
+4. Update your `.env` file with these live keys:
+   ```
+   STRIPE_SECRET_KEY=your_live_secret_key
+   STRIPE_PUBLISHABLE_KEY=your_live_publishable_key
+   ```
+5. Set up a webhook in the Stripe Dashboard:
+   - Go to Developers > Webhooks
+   - Add a new endpoint with your production URL
+   - Select the events you want to listen for (at minimum, `checkout.session.completed`)
+   - Copy the webhook signing secret and add it to your `.env` file:
+     ```
+     STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret
+     ```
+6. Update the success and cancel URLs in `stripe_utils.py` to point to your production bot's URL.
+7. Test the integration thoroughly in Stripe's test mode before switching to live mode.
+
+Remember to keep your Stripe API keys and webhook secret secure and never expose them publicly.
+
 ## Usage
 
 1. Start a chat with the bot on Telegram
 2. Send the `/start` command to get instructions
-3. Send a link to a video from any supported platform (Instagram, TikTok, YouTube, Facebook, Twitter, or Pinterest)
+3. Send a link to a video from any supported platform
 4. The bot will process the link and send you the video as both a video message and a file
+5. Use `/subscribe` to view and purchase subscription plans
 
 ### Premium Access
 
 Users have a limited number of free downloads. To get unlimited access:
 
-1. Obtain a coupon code from an admin
-2. Use the `/activate_coupon` command and enter the coupon code
+1. Use the `/subscribe` command to view available plans
+2. Select a plan to proceed to payment
+3. Complete the payment process through Stripe
+4. Once payment is confirmed, the subscription will be automatically activated
 
 ## Admin Functionality
 
@@ -98,7 +136,7 @@ Admins can perform the following actions:
 - python-dotenv
 - pymongo
 - requests
-- ddinsta (for Instagram video downloads)
+- stripe
 
 ## API Used
 

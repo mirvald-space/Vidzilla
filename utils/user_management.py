@@ -108,7 +108,25 @@ def activate_coupon(user_id, coupon_code):
 
 
 def get_limit_exceeded_message():
-    return f"You have exceeded the free limit of {FREE_LIMIT} downloads.\n\n Please contact an admin to get access to unlimited downloads.\n\nTo activate the coupon you need to execute the command /activate_coupon"
+    return f"You have exceeded the free limit of {FREE_LIMIT} downloads.\n\nPlease choose a subscription plan to continue using the bot:\n\n1. 1 month - $1\n2. 3 months - $5\n3. Lifetime - $10\n\nUse /subscribe command to select a plan."
+
+
+async def update_subscription(user_id, plan):
+    duration_map = {
+        '1month': timedelta(days=30),
+        '3months': timedelta(days=90),
+        'lifetime': timedelta(days=36500)  # ~100 years
+    }
+
+    duration = duration_map.get(plan)
+    if not duration:
+        return False
+
+    result = users_collection.update_one(
+        {'user_id': user_id},
+        {'$set': {'subscription_end': datetime.now() + duration}}
+    )
+    return result.modified_count > 0
 
 
 def is_admin(user_id):
