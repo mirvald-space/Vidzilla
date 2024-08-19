@@ -3,19 +3,13 @@ from datetime import datetime, timedelta
 
 import stripe
 from aiogram import Bot
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiohttp import web
 
 from config import STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-from handlers.handlers import DownloadVideo
 from utils.user_management import update_subscription
 
 stripe.api_key = STRIPE_SECRET_KEY
 logger = logging.getLogger(__name__)
-
-# Создаем экземпляр MemoryStorage для хранения состояний
-storage = MemoryStorage()
 
 
 async def send_message_to_user(bot: Bot, user_id: int, message: str):
@@ -65,10 +59,6 @@ async def handle_stripe_webhook(request):
                                end_date.strftime('%Y-%m-%d')}. "
                            f"You can now send me a link to download a video.")
                 await send_message_to_user(bot, user_id, message)
-
-                # Сбрасываем состояние пользователя
-                state = FSMContext(storage=storage, user=user_id, chat=user_id)
-                await state.set_state(DownloadVideo.waiting_for_link)
             else:
                 logger.error(
                     f"Error activating subscription for user {user_id}")

@@ -98,7 +98,7 @@ async def process_link(message: Message, state: FSMContext, bot: Bot):
     await state.set_state(DownloadVideo.waiting_for_link)
 
 
-async def subscribe_command(message: Message, state: FSMContext):
+async def subscribe_command(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     keyboard = []
 
@@ -106,10 +106,10 @@ async def subscribe_command(message: Message, state: FSMContext):
         price_in_dollars = details['price'] / 100  # Convert cents to dollars
         button_text = f"{details['name']} - ${price_in_dollars:.2f}"
         checkout_url = create_checkout_session(plan, user_id)
-        keyboard.append([InlineKeyboardButton(
+        keyboard.append([types.InlineKeyboardButton(
             text=button_text, url=checkout_url)])
 
-    reply_markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
     await message.answer("Please choose a subscription plan:", reply_markup=reply_markup)
 
 
