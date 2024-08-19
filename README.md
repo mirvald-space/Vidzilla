@@ -16,14 +16,14 @@ Easily download and share videos from your favorite social media platforms with 
 
 ## Supported Platforms
 
-| Platform     | Status  |
-| ------------ | ------- |
-| Instagram    | ✅       |
-| TikTok       | ✅       |
-| YouTube      | ✅       |
-| Facebook     | ✅       |
-| Twitter      | ✅       |
-| Pinterest    | ✅       |
+| Platform  | Status |
+| --------- | ------ |
+| Instagram | ✅     |
+| TikTok    | ✅     |
+| YouTube   | ✅     |
+| Facebook  | ✅     |
+| Twitter   | ✅     |
+| Pinterest | ✅     |
 
 ## Commands
 
@@ -59,19 +59,22 @@ Easily download and share videos from your favorite social media platforms with 
 
 3. Create a `.env` file in the project root and add the following environment variables:
 
-   - `BOT_TOKEN`: Your Telegram bot token obtained from BotFather
-   - `RAPIDAPI_KEY`: Your RapidAPI key for the Social Media Video Downloader API
-   - `WEBHOOK_PATH`: The path for your webhook (e.g., `/webhook`)
-   - `WEBHOOK_URL`: The full URL to your webhook (e.g., `https://your-domain.com/webhook`)
-   - `MONGODB_URI`: Your MongoDB connection string
-   - `MONGODB_DB_NAME`: Name of your MongoDB database
-   - `MONGODB_USERS_COLLECTION`: Name of the collection for user data
-   - `MONGODB_COUPONS_COLLECTION`: Name of the collection for coupon data
-   - `ADMIN_IDS`: Comma-separated list of admin user IDs
-   - `FREE_LIMIT`: Number of free downloads allowed per user (default is 3)
-   - `STRIPE_SECRET_KEY`: Your Stripe secret key
-   - `STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key
-   - `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook secret
+- `BOT_TOKEN`: Your Telegram bot token obtained from BotFather
+- `BOT_USERNAME`: Your Telegram bot's username (without @)
+- `RAPIDAPI_KEY`: Your RapidAPI key for the Social Media Video Downloader API
+- `WEBHOOK_PATH`: The path for your webhook (e.g., `/webhook`)
+- `WEBHOOK_URL`: The full URL to your webhook (e.g., `https://your-domain.com/webhook`)
+- `MONGODB_URI`: Your MongoDB connection string
+- `MONGODB_DB_NAME`: Name of your MongoDB database
+- `MONGODB_USERS_COLLECTION`: Name of the collection for user data
+- `MONGODB_COUPONS_COLLECTION`: Name of the collection for coupon data
+- `ADMIN_IDS`: Comma-separated list of admin user IDs
+- `FREE_LIMIT`: Number of free downloads allowed per user (default is 3)
+- `STRIPE_SECRET_KEY`: Your Stripe secret key
+- `STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key
+- `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook secret
+- `STRIPE_SUCCESS_URL`: URL to redirect after successful payment (default is https://t.me/your_bot_username)
+- `STRIPE_CANCEL_URL`: URL to redirect after cancelled payment (default is https://t.me/your_bot_username)
 
 4. Set up a webhook for your bot on a server with HTTPS support.
 

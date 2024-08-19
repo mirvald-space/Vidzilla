@@ -1,6 +1,11 @@
 import stripe
 
-from config import STRIPE_SECRET_KEY, SUBSCRIPTION_PLANS
+from config import (
+    STRIPE_CANCEL_URL,
+    STRIPE_SECRET_KEY,
+    STRIPE_SUCCESS_URL,
+    SUBSCRIPTION_PLANS,
+)
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -22,8 +27,8 @@ def create_checkout_session(plan, user_id):
             'quantity': 1,
         }],
         mode='payment',
-        success_url='https://t.me/jfdjfg_bot',  # Replace with your bot's username
-        cancel_url='https://t.me/jfdjfg_bot',  # Replace with your bot's username
+        success_url=STRIPE_SUCCESS_URL,
+        cancel_url=STRIPE_CANCEL_URL,
         client_reference_id=str(user_id),
         metadata={'plan': plan}
     )

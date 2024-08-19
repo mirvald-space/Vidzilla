@@ -27,10 +27,16 @@ MONGODB_COUPONS_COLLECTION = os.getenv('MONGODB_COUPONS_COLLECTION')
 ADMIN_IDS = list(map(int, os.getenv('ADMIN_IDS', '').split(',')))
 FREE_LIMIT = int(os.getenv('FREE_LIMIT', 3))
 
+# Bot configuration
+BOT_USERNAME = os.getenv('BOT_USERNAME')
+BOT_URL = f"https://t.me/{BOT_USERNAME}"
+
 # Stripe configuration
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+STRIPE_SUCCESS_URL = os.getenv('STRIPE_SUCCESS_URL', BOT_URL)
+STRIPE_CANCEL_URL = os.getenv('STRIPE_CANCEL_URL', BOT_URL)
 
 # Subscription plans
 SUBSCRIPTION_PLANS = {
