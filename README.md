@@ -85,6 +85,8 @@ Easily download and share videos from your favorite social media platforms with 
 
 ## Stripe Integration
 
+This bot uses Stripe for handling payments. It supports both credit card payments and PayPal.
+
 To set up Stripe for production payments:
 
 1. Create a Stripe account at https://stripe.com if you haven't already.
@@ -103,8 +105,12 @@ To set up Stripe for production payments:
      ```
      STRIPE_WEBHOOK_SECRET=your_webhook_signing_secret
      ```
-6. Update the success and cancel URLs in `stripe_utils.py` to point to your production bot's URL.
-7. Test the integration thoroughly in Stripe's test mode before switching to live mode.
+6. To enable PayPal:
+   - In the Stripe Dashboard, go to Settings > Payment methods
+   - Find PayPal in the list and click 'Set up'
+   - Follow the instructions to connect your PayPal account
+7. Update the success and cancel URLs in `config.py` to point to your production bot's URL.
+8. Test the integration thoroughly in Stripe's test mode before switching to live mode.
 
 Remember to keep your Stripe API keys and webhook secret secure and never expose them publicly.
 
