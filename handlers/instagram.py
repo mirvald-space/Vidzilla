@@ -56,8 +56,8 @@ async def process_instagram(message, bot, instagram_url):
                 if os.path.getsize(video_path) == 0:
                     raise ValueError("Downloaded video file is empty")
 
-                logger.info(f"Video file size: {
-                            os.path.getsize(video_path)} bytes")
+                logger.info(f"""Video file size: {
+                            os.path.getsize(video_path)} bytes""")
 
                 # Send as video
                 video_file = FSInputFile(video_path)
