@@ -48,27 +48,27 @@ To use the bot, simply send me a video link from any supported platform.
 
 
 async def send_help(message: Message):
-    help_text = (
-        "This bot helps download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.\n\n"
-        "How to use:\n"
-        "1. Send the bot a link to a video.\n"
-        "2. The bot will process the link and return the video in two formats:\n"
-        "   - As a video message\n"
-        "   - As a document file\n\n"
-        f"You have {
-            FREE_LIMIT} free downloads. After that, you'll need to subscribe.\n\n"
-        "Commands:\n"
-        "/start - Start working with the bot\n"
-        "/help - Show this help message\n"
-        "/subscribe - View and purchase subscription plans"
-    )
+    help_text = f"""This bot helps download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.
+
+How to use:
+1. Send the bot a link to a video.
+2. The bot will process the link and return the video in two formats:
+ - As a video message
+ - As a document file
+
+You have {FREE_LIMIT} free downloads. After that, you'll need to subscribe.
+
+Commands:
+/start - Start working with the bot
+/help - Show this help message
+/subscribe - View and purchase subscription plans"""
 
     if is_admin(message.from_user.id):
-        help_text += (
-            "\n\nAdmin commands:\n"
-            "/generate_coupon - Generate a new coupon\n"
-            "/stats - View usage statistics"
-        )
+        help_text += """
+
+Admin commands:
+/generate_coupon - Generate a new coupon
+/stats - View usage statistics"""
 
     await message.answer(help_text)
 
