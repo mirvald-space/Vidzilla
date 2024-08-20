@@ -28,17 +28,20 @@ class AdminActions(StatesGroup):
 
 async def send_welcome(message: Message, state: FSMContext):
     await message.answer(
-        "<b>👋 Hi! Welcome to the Social Media Video Downloader Bot!</b>\n\n"
-        f"I can download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.\n\n"
-        f"<b>🎁 Free Trial:</b> You have {
-            FREE_LIMIT} free downloads to try out the bot.\n\n"
-        "<b>Available commands:</b>\n"
-        "/start - Start working with the bot\n"
-        "/help - Get detailed help\n"
-        "/subscribe - View subscription plans\n\n"
-        "To use the bot, simply send me a video link from any supported platform.\n\n"
-        f"<b>💡 Tip:</b> If you need more than {
-            FREE_LIMIT} downloads, check out our subscription plans with /subscribe command!",
+        f"""<b>👋 Hi! Welcome to the Social Media Video Downloader Bot!</b>
+
+I can download videos from Instagram Reels, TikTok, YouTube, Facebook, Twitter, and Pinterest.
+
+<b>🎁 Free Trial:</b> You have {FREE_LIMIT} free downloads to try out the bot.
+
+<b>Available commands:</b>
+/start - Start working with the bot
+/help - Get detailed help
+/subscribe - View subscription plans
+
+To use the bot, simply send me a video link from any supported platform.
+
+<b>💡 Tip:</b> If you need more than {FREE_LIMIT} downloads, check out our subscription plans with /subscribe command!""",
         parse_mode="HTML"
     )
     await state.set_state(DownloadVideo.waiting_for_link)
