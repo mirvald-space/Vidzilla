@@ -54,10 +54,10 @@ async def handle_stripe_webhook(request):
                     'lifetime': timedelta(days=36500)
                 }
                 end_date = datetime.now() + duration_map.get(plan, timedelta(days=30))
-                message = (f"Thank you for your purchase! Your subscription has been activated. "
-                           f"Your subscription is valid until {
-                               end_date.strftime('%Y-%m-%d')}. "
-                           f"You can now send me a link to download a video.")
+                message = (f"Thank you for your purchase! Your subscription has been activated. """
+                           f"""Your subscription is valid until {
+                               end_date.strftime('%Y-%m-%d')}. """
+                           f"""You can now send me a link to download a video.""")
                 await send_message_to_user(bot, user_id, message)
             else:
                 logger.error(
