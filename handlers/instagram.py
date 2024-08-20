@@ -20,18 +20,18 @@ async def process_instagram(message, bot, instagram_url):
     temp_dir = os.path.join(TEMP_DIRECTORY, request_id)
 
     try:
-        logger.info(f"Processing Instagram URL: {
-                    instagram_url} for request {request_id}")
+        logger.info(f"""Processing Instagram URL: {
+                    instagram_url} for request {request_id}""")
 
         # Create a unique temporary directory for this request
         os.makedirs(temp_dir, exist_ok=True)
 
         if "/reel/" in instagram_url:
             try:
-                logger.info(f"Attempting to download video from: {
-                            instagram_url}")
+                logger.info(f"""Attempting to download video from: {
+                            instagram_url}""")
                 result = ddinsta.save_video(instagram_url)
-                logger.info(f"ddinsta.save_video result: {result}")
+                logger.info(f"""ddinsta.save_video result: {result}""")
 
                 if result == '[!] Success':
                     # Find the video file in the root directory
